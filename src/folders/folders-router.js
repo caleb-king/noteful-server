@@ -10,13 +10,22 @@ foldersRouter
     const knexInstance = req.app.get('db');
     foldersService.getAllFolders(knexInstance)
       .then((folders) => {
-        const renamedFolders = folders.map(foldersService.preprocessFolder);
+        const renamedFolders = folders.map(foldersService.prepareFolderForClient);
         res.json(renamedFolders);
       })
       .catch(next);
   })
   .post(jsonParser, (req, res, next) => {
-    res.send('Created a new folder');
+    const knexInstance = req.app.get('db');
+    const newFolder = { folder_name: req.body.name };
+    foldersService.insertFolder(knexInstance, newFolder)
+      .then(folder => {
+        const responseFolder = foldersService.prepareFolderForClient(folder);
+        res
+          .status(201)
+          .json(responseFolder);
+      })
+      .catch(next);
   });
 
 foldersRouter
