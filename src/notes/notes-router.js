@@ -1,8 +1,17 @@
 const express = require('express');
 const notesService = require('./notes-service');
+const xss = require('xss');
 
 const notesRouter = express.Router();
 const jsonParser = express.json();
+
+const serializeNote = note => ({
+  id: note.id,
+  name: xss(note.name),
+  modified: note.modified,
+  folderId: note.folderId,
+  content: xss(note.content)
+});
 
 notesRouter
   .route('/')
@@ -11,7 +20,7 @@ notesRouter
     notesService.getAllNotes(knexInstance)
       .then(notes => {
         const renamedNotes = notes.map(notesService.prepareNoteForClient);
-        res.json(renamedNotes);
+        res.json(renamedNotes.map(serializeNote));
       })
       .catch(next);
   })
@@ -27,7 +36,7 @@ notesRouter
         const responseNote = notesService.prepareNoteForClient(note);
         res
           .status(201)
-          .json(responseNote);
+          .json(serializeNote(responseNote));
       })
       .catch(next);
   });

@@ -1,8 +1,14 @@
 const express = require('express');
 const foldersService = require('./folders-service');
+const xss = require('xss');
 
 const foldersRouter = express.Router();
 const jsonParser = express.json();
+
+const serializeFolder = folder => ({
+  id: folder.id,
+  name: xss(folder.name)
+});
 
 foldersRouter
   .route('/')
@@ -11,7 +17,7 @@ foldersRouter
     foldersService.getAllFolders(knexInstance)
       .then((folders) => {
         const renamedFolders = folders.map(foldersService.prepareFolderForClient);
-        res.json(renamedFolders);
+        res.json(renamedFolders.map(serializeFolder));
       })
       .catch(next);
   })
@@ -23,7 +29,7 @@ foldersRouter
         const responseFolder = foldersService.prepareFolderForClient(folder);
         res
           .status(201)
-          .json(responseFolder);
+          .json(serializeFolder(responseFolder));
       })
       .catch(next);
   });
